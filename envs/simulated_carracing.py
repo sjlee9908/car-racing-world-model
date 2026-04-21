@@ -5,7 +5,7 @@ import argparse
 from os.path import join, exists
 import torch
 from torch.distributions.categorical import Categorical
-import gym
+import gymnasium as gym
 from gym import spaces
 from models.vae import VAE
 from models.mdrnn import MDRNNCell
@@ -18,7 +18,7 @@ class SimulatedCarracing(gym.Env): # pylint: disable=too-many-instance-attribute
     Simulated Car Racing.
 
     Gym environment using learnt VAE and MDRNN to simulate the
-    CarRacing-v0 environment.
+    CarRacing-v3 environment.
 
     :args directory: directory from which the vae and mdrnn are
     loaded.

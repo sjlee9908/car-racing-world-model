@@ -4,7 +4,7 @@ In this blog post, we are delving into [World
 Models](https://arxiv.org/pdf/1803.10122.pdf) (Ha et al., 2018)[1] a recent
 model based reinforcement learning paper that achieves surprisingly good
 performance on the challenging
-[CarRacing-v0](https://gym.openai.com/envs/CarRacing-v0/) environment.
+[CarRacing-v3](https://gym.openai.com/envs/CarRacing-v3/) environment.
 
 Along with a short summary of the paper, we provide a [pytorch implementation
 ](https://github.com/ctallec/world-models), as well as additional
@@ -34,7 +34,7 @@ Alternatively, if the MDN-RNN is good enough at modelling the environment, the c
 
 # Reproducibility on the CarRacing environment
 
-On the CarRacing-v0 environment, results were reproducible with relative ease. We were pleasantly surprised to observe that the model achieved good results on the first try, relatively to the usual reproducibility standards of deep reinforcement learning algorithms [5, 6]. Our own implementation reached a best score of 860, below the 906 reported in the paper, but much better than the second best benchmark reported which is around 780. We believe the gap in the results is related to our reduced computational power, resulting in tamed down hyperparameters for CMA-ES compared to those used in the paper. Gifs displaying the behavior of our best trained model are provided below.
+On the CarRacing-v3 environment, results were reproducible with relative ease. We were pleasantly surprised to observe that the model achieved good results on the first try, relatively to the usual reproducibility standards of deep reinforcement learning algorithms [5, 6]. Our own implementation reached a best score of 860, below the 906 reported in the paper, but much better than the second best benchmark reported which is around 780. We believe the gap in the results is related to our reduced computational power, resulting in tamed down hyperparameters for CMA-ES compared to those used in the paper. Gifs displaying the behavior of our best trained model are provided below.
 
 
 ![Full model with trained MDRNN]({{"/img/trained.gif" | absolute_url}})
@@ -74,9 +74,9 @@ We reproduced the paper "World Models" on the CarRacing environment, and made so
 
 * The results were easy to reproduce. It probably means that the method on this problem does not only achieve high performance but is also very stable. This is an important remark for a deep reinforcement learning method.
 
-* On the CarRacing-v0 environment, it seems that the recurrent network only serves as a recurrent reservoir, enabling access to crucial higher order information, such as velocity or acceleration. This observation needs some perspective, it comes with several interrogations and remarks:
+* On the CarRacing-v3 environment, it seems that the recurrent network only serves as a recurrent reservoir, enabling access to crucial higher order information, such as velocity or acceleration. This observation needs some perspective, it comes with several interrogations and remarks:
     * (Ha et al. 2018) reports good results when training in the simulated environment on the VizDoom task. Without a trained recurrent forward model, we cannot expect to obtain such performance.
-    * On CarRacing-v0, the untrained MDRNN already obtains near optimal results. Is the task sufficiently easy to alleviate the need for a good recurrent forward model?
+    * On CarRacing-v3, the untrained MDRNN already obtains near optimal results. Is the task sufficiently easy to alleviate the need for a good recurrent forward model?
     * Learning a good model of a high dimensional environment is hard. It is notably difficult to obtain coherent multi modal behaviors on long time ranges (i.e. predicting two futures, one where the next turn is a right turn, the other where it is a left turn). Visually, despite the latent gaussian mixture model, our model doesn't seem to overcome this difficulty. Is proper handling of multi modal behaviors key to leveraging the usefulness of a model of the world?
 
 # Authors

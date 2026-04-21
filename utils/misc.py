@@ -5,8 +5,8 @@ import torch
 from torchvision import transforms
 import numpy as np
 from models import MDRNNCell, VAE, Controller
-import gym
-import gym.envs.box2d
+import gymnasium as gym
+import gymnasium.envs.box2d
 
 # A bit dirty: manually change size of car racing env
 gym.envs.box2d.car_racing.STATE_W, gym.envs.box2d.car_racing.STATE_H = 64, 64
@@ -99,7 +99,7 @@ class RolloutGenerator(object):
     :attr mdrnn: MDRNN model loaded from mdir/mdrnn
     :attr controller: Controller, either loaded from mdir/ctrl or randomly
         initialized
-    :attr env: instance of the CarRacing-v0 gym environment
+    :attr env: instance of the CarRacing-v3 gym environment
     :attr device: device used to run VAE, MDRNN and Controller
     :attr time_limit: rollouts have a maximum of time_limit timesteps
     """
@@ -137,7 +137,7 @@ class RolloutGenerator(object):
                 ctrl_state['reward']))
             self.controller.load_state_dict(ctrl_state['state_dict'])
 
-        self.env = gym.make('CarRacing-v0')
+        self.env = gym.make('CarRacing-v3')
         self.device = device
 
         self.time_limit = time_limit
