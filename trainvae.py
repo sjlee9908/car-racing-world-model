@@ -20,8 +20,8 @@ from utils.learning import ReduceLROnPlateau
 from data.loaders import RolloutObservationDataset
 
 parser = argparse.ArgumentParser(description='VAE Trainer')
-parser.add_argument('--batch-size', type=int, default=32, metavar='N',
-                    help='input batch size for training (default: 32)')
+parser.add_argument('--batch-size', type=int, default=2048, metavar='N',
+                    help='input batch size for training (default: 2048)')
 parser.add_argument('--epochs', type=int, default=1000, metavar='N',
                     help='number of epochs to train (default: 1000)')
 parser.add_argument('--logdir', type=str, help='Directory where results are logged')

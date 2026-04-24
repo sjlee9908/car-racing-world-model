@@ -1,6 +1,9 @@
-cma
-argparse
-gym[all]
-box2d
-tqdm
-numpy
+cma==4.4.4
+gymnasium==1.1.1
+matplotlib==3.10.8
+numpy==2.4.4
+torch==2.8.0
+torchvision==0.23.0
+tqdm==4.67.3
+swig
+# gymnasium[box2d]

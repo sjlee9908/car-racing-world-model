@@ -31,7 +31,7 @@ args = parser.parse_args()
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # constants
-BSIZE = 16
+BSIZE = 1024
 SEQ_LEN = 32
 epochs = 30
 
@@ -101,7 +101,7 @@ def to_latent(obs, next_obs):
             vae(x)[1:] for x in (obs, next_obs)]
 
         latent_obs, latent_next_obs = [
-            (x_mu + x_logsigma.exp() * torch.randn_like(x_mu)).view(BSIZE, SEQ_LEN, LSIZE)
+            (x_mu + x_logsigma.exp() * torch.randn_like(x_mu)).view(-1, SEQ_LEN, LSIZE)
             for x_mu, x_logsigma in
             [(obs_mu, obs_logsigma), (next_obs_mu, next_obs_logsigma)]]
     return latent_obs, latent_next_obs

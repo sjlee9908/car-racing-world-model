@@ -105,6 +105,58 @@ class MDRNN(_MDRNNBase):
 
         return mus, sigmas, logpi, rs, ds
 
+class MDATTN(_MDRNNBase):
+    """ Attention-based world model for multi-step forward. """
+    def __init__(self, latents, actions, hiddens, gaussians,
+                 num_layers=2, num_heads=4, dropout=0.1, max_seq_len=256):
+        super().__init__(latents, actions, hiddens, gaussians)
+        self.max_seq_len = max_seq_len
+        self.input_proj = nn.Linear(latents + actions, hiddens)
+        self.pos_embedding = nn.Parameter(torch.zeros(max_seq_len, 1, hiddens))
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=hiddens, nhead=num_heads, dim_feedforward=4 * hiddens,
+            dropout=dropout, batch_first=False)
+        self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+
+    def forward(self, actions, latents, return_hiddens=False):  # pylint: disable=arguments-differ
+        """ MULTI STEPS forward with causal self-attention. """
+        seq_len, bs = actions.size(0), actions.size(1)
+        if seq_len > self.max_seq_len:
+            raise ValueError(
+                "Sequence length {} exceeds max_seq_len {}".format(
+                    seq_len, self.max_seq_len))
+
+        ins = torch.cat([actions, latents], dim=-1)
+        ins = self.input_proj(ins)
+        ins = ins + self.pos_embedding[:seq_len]
+
+        causal_mask = torch.triu(
+            torch.full((seq_len, seq_len), float('-inf'), device=ins.device),
+            diagonal=1)
+        outs = self.encoder(ins, mask=causal_mask)
+        gmm_outs = self.gmm_linear(outs)
+
+        stride = self.gaussians * self.latents
+
+        mus = gmm_outs[:, :, :stride]
+        mus = mus.view(seq_len, bs, self.gaussians, self.latents)
+
+        sigmas = gmm_outs[:, :, stride:2 * stride]
+        sigmas = sigmas.view(seq_len, bs, self.gaussians, self.latents)
+        sigmas = torch.exp(sigmas)
+
+        pi = gmm_outs[:, :, 2 * stride: 2 * stride + self.gaussians]
+        pi = pi.view(seq_len, bs, self.gaussians)
+        logpi = f.log_softmax(pi, dim=-1)
+
+        rs = gmm_outs[:, :, -2]
+
+        ds = gmm_outs[:, :, -1]
+
+        if return_hiddens:
+            return mus, sigmas, logpi, rs, ds, outs
+        return mus, sigmas, logpi, rs, ds
+
 class MDRNNCell(_MDRNNBase):
     """ MDRNN model for one step forward """
     def __init__(self, latents, actions, hiddens, gaussians):

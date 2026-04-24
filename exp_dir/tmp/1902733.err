@@ -1,0 +1,36 @@
+/opt/conda/lib/python3.11/site-packages/torch/nn/modules/transformer.py:392: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.self_attn.batch_first was not True(use batch_first for better inference performance)
+  warnings.warn(
+Process Process-5:
+Traceback (most recent call last):
+  File "/opt/conda/lib/python3.11/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/opt/conda/lib/python3.11/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/app/traincontroller_attn.py", line 108, in slave_routine
+    r_queue.put((s_id, r_gen.rollout(params)))
+                       ^^^^^^^^^^^^^^^^^^^^^
+  File "/app/utils/misc.py", line 226, in rollout
+    obs, reward, terminated, truncated, info = self.env.step(action)
+                                               ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/gymnasium/wrappers/common.py", line 125, in step
+    observation, reward, terminated, truncated, info = self.env.step(action)
+                                                       ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/gymnasium/wrappers/common.py", line 393, in step
+    return super().step(action)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/gymnasium/core.py", line 327, in step
+    return self.env.step(action)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/gymnasium/wrappers/common.py", line 285, in step
+    return self.env.step(action)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/gymnasium/envs/box2d/car_racing.py", line 587, in step
+    self.render()
+  File "/opt/conda/lib/python3.11/site-packages/gymnasium/envs/box2d/car_racing.py", line 600, in render
+    return self._render(self.render_mode)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/gymnasium/envs/box2d/car_racing.py", line 628, in _render
+    self._render_road(zoom, trans, angle)
+  File "/opt/conda/lib/python3.11/site-packages/gymnasium/envs/box2d/car_racing.py", line 680, in _render_road
+    grass.append(
+KeyboardInterrupt

@@ -4,7 +4,7 @@ from os.path import join, exists
 import torch
 from torchvision import transforms
 import numpy as np
-from models import MDRNNCell, VAE, Controller
+from models import MDRNNCell, VAE, Controller, MDATTN
 import gymnasium as gym
 import gymnasium.envs.box2d
 
@@ -124,21 +124,35 @@ class RolloutGenerator(object):
         self.vae = VAE(3, LSIZE).to(device)
         self.vae.load_state_dict(vae_state['state_dict'])
 
-        self.mdrnn = MDRNNCell(LSIZE, ASIZE, RSIZE, 5).to(device)
-        self.mdrnn.load_state_dict(
-            {k.strip('_l0'): v for k, v in rnn_state['state_dict'].items()})
+        rnn_state_dict = rnn_state['state_dict']
+        if any(k.startswith('encoder.') or k.startswith('input_proj.')
+               or k.startswith('pos_embedding') for k in rnn_state_dict):
+            self.world_model_type = 'attn'
+            self.mdrnn = MDATTN(LSIZE, ASIZE, RSIZE, 5).to(device)
+            self.mdrnn.load_state_dict(rnn_state_dict)
+            self._attn_latent_hist = []
+            self._attn_action_hist = []
+        else:
+            self.world_model_type = 'rnn'
+            self.mdrnn = MDRNNCell(LSIZE, ASIZE, RSIZE, 5).to(device)
+            self.mdrnn.load_state_dict(
+                {k.strip('_l0'): v for k, v in rnn_state_dict.items()})
 
         self.controller = Controller(LSIZE, RSIZE, ASIZE).to(device)
 
         # load controller if it was previously saved
         if exists(ctrl_file):
-            ctrl_state = torch.load(ctrl_file, map_location={'cuda:0': str(device)})
+            ctrl_state = torch.load(ctrl_file, map_location={'cuda:0': str(device)}, weights_only=False)
             print("Loading Controller with reward {}".format(
                 ctrl_state['reward']))
             self.controller.load_state_dict(ctrl_state['state_dict'])
 
-        self.env = gym.make('CarRacing-v3')
+        self.env = gym.make('CarRacing-v3', render_mode="human")
         self.device = device
+
+        self.vae.eval()
+        self.mdrnn.eval()
+        self.controller.eval()
 
         self.time_limit = time_limit
 
@@ -157,8 +171,23 @@ class RolloutGenerator(object):
             - next_hidden (1 x 256) torch tensor
         """
         _, latent_mu, _ = self.vae(obs)
-        action = self.controller(latent_mu, hidden[0])
-        _, _, _, _, _, next_hidden = self.mdrnn(action, latent_mu, hidden)
+        if self.world_model_type == 'attn':
+            action = self.controller(latent_mu, hidden)
+            self._attn_latent_hist.append(latent_mu)
+            self._attn_action_hist.append(action)
+
+            max_seq_len = getattr(self.mdrnn, 'max_seq_len', 256)
+            if len(self._attn_latent_hist) > max_seq_len:
+                self._attn_latent_hist = self._attn_latent_hist[-max_seq_len:]
+                self._attn_action_hist = self._attn_action_hist[-max_seq_len:]
+
+            latents = torch.stack(self._attn_latent_hist, dim=0)
+            actions = torch.stack(self._attn_action_hist, dim=0)
+            _, _, _, _, _, hiddens = self.mdrnn(actions, latents, return_hiddens=True)
+            next_hidden = hiddens[-1]
+        else:
+            action = self.controller(latent_mu, hidden[0])
+            _, _, _, _, _, next_hidden = self.mdrnn(action, latent_mu, hidden)
         return action.squeeze().cpu().numpy(), next_hidden
 
     def rollout(self, params, render=False):
@@ -175,21 +204,27 @@ class RolloutGenerator(object):
         if params is not None:
             load_parameters(params, self.controller)
 
-        obs = self.env.reset()
+        obs, info= self.env.reset()
 
         # This first render is required !
         self.env.render()
 
-        hidden = [
-            torch.zeros(1, RSIZE).to(self.device)
-            for _ in range(2)]
+        if self.world_model_type == 'attn':
+            hidden = torch.zeros(1, RSIZE).to(self.device)
+            self._attn_latent_hist = []
+            self._attn_action_hist = []
+        else:
+            hidden = [
+                torch.zeros(1, RSIZE).to(self.device)
+                for _ in range(2)]
 
         cumulative = 0
         i = 0
         while True:
             obs = transform(obs).unsqueeze(0).to(self.device)
             action, hidden = self.get_action_and_transition(obs, hidden)
-            obs, reward, done, _ = self.env.step(action)
+            obs, reward, terminated, truncated, info = self.env.step(action)
+            done = terminated or truncated
 
             if render:
                 self.env.render()

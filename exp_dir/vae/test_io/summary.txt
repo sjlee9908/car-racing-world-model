@@ -1,0 +1,5 @@
+checkpoint=exp_dir/vae/best.tar
+split=test
+saved_samples=24
+device=cuda
+latent_mu_shape=(24, 32)
